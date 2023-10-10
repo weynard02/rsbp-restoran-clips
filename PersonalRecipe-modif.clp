@@ -83,9 +83,25 @@
     )
     (test (neq ?cuisine ?cuisine-pref))
     =>
-    (printout -t "Sorry we don't have the cuisine you prefer, hehe" crlf)
+    (printout t "Sorry we don't have the cuisine you prefer, try again hehe" crlf)
     (retract (User (name ?name))) ; Delete user fact
-    (call GetUserPreferences) ; Get back to input
+     ; Get back to input
+    (printout t "insert your name !")
+    (bind ?name (read))
+    (printout t "Welcome, " ?name ". Let's find you a recipe!" crlf)
+    (printout t "What cuisine do you prefer? ")
+    (bind ?cuisine-pref (read))
+    (printout t "How difficult should the recipe be? (Easy, Intermediate, Difficult) ")
+    (bind ?difficulty-pref (read))
+    (printout t "Do you have any specific ingredient preferences? ")
+    (bind ?ingredient-pref (read))
+    ; create new user fact
+    (assert (User 
+        (name ?name)
+        (difficulty-preference ?difficulty-pref)
+        (cuisine-preference ?cuisine-pref)
+        (ingredient-preference ?ingredient-pref)
+    ))
 )
 
 (defrule GetUserRating
