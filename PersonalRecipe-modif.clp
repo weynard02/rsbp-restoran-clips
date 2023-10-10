@@ -64,8 +64,28 @@
     (printout t "Based on your preferences, we recommend: " ?recipe crlf)
     (printout t "Ingredients: " ?ingredients crlf)
     (printout t "Enjoy your meal!" crlf)
-    ;(retract (User (name ?name)))
-    ;(retract (Recipe (name ?recipe)))
+    ; (retract (User (name ?name)))
+    ; (retract (Recipe (name ?recipe)))
+)
+
+(defrule checkRecipeCuisineAvailable ; check if the recipe is available based on cuisine
+    (User 
+        (name ?name)
+        (cuisine-preference ?cuisine-pref)
+        (difficulty-preference ?difficulty-pref)
+        (ingredient-preference ?ingredient-pref)
+    )
+    (Recipe 
+        (name ?recipe)
+        (cuisine ?cuisine)
+        (difficulty ?difficulty)
+        (ingredients ?ingredients)
+    )
+    (test (neq ?cuisine ?cuisine-pref))
+    =>
+    (printout -t "Sorry we don't have the cuisine you prefer, hehe" crlf)
+    (retract (User (name ?name))) ; Delete user fact
+    (call GetUserPreferences) ; Get back to input
 )
 
 (defrule GetUserRating
@@ -98,14 +118,16 @@
     )
 )
 
+
+
 (defrule ExitRecommendationWithRating
    (User (name ?name))
    (RecipeRating (user-name ?name))
    =>
    (printout t "Thank you for using the personalized recipe recommender, " ?name "!" crlf)
    (printout t "Don't forget to check out more recipes and share your feedback. Enjoy your meals!" crlf)
-   ;(retract (User (name ?name)))
-   ;(exit)
+;    (retract (User (name ?name)))
+   (exit)
 )
 
 ; set initial facts
