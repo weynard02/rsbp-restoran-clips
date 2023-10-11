@@ -210,8 +210,7 @@
          (recipe1-name ?recipe_match1)
          (recipe2-name ?recipe_match2)
     )
- (test (or (and (eq ?recipe1 ?recipe_match1)(eq ?recipe2 ?recipe_match2)) 
- (and (eq ?recipe2 ?recipe_match1)(eq ?recipe1 ?recipe_match2))))
+ (test (and (eq ?recipe1 ?recipe_match1)(eq ?recipe2 ?recipe_match2)))
    =>
     (printout t "BEST MATCH!!! , You Got " ?name_set crlf)
 )
@@ -330,7 +329,7 @@
 
    (Recipe 
           (name "Caprese Salad") 
-          (cuisine Italian) 
+          (cuisine Malaysian) 
           (difficulty Easy)
           (ingredients "tomatoes, fresh mozzarella, basil, balsamic glaze") 
           (instructions "1. Slice tomatoes and mozzarella. 2. Arrange with basil. 3. Drizzle with balsamic glaze.")
@@ -370,7 +369,7 @@
 
    (Recipe 
           (name "Pasta Primavera") 
-          (cuisine Italian) 
+          (cuisine Polandian) 
           (difficulty Easy)
           (ingredients "penne pasta, assorted vegetables, garlic, olive oil, Parmesan cheese") 
           (instructions "1. Cook penne pasta. 2. Sauté vegetables and garlic in olive oil. 3. Toss with pasta. 4. Sprinkle with Parmesan.")
