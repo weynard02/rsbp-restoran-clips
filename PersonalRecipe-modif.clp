@@ -20,6 +20,26 @@
    (slot ingredient-preference)
 )
 
+(deftemplate RecipeCreated
+    (slot name) 
+    (slot cuisine) 
+    (slot difficulty) 
+    (slot ingredients) 
+)
+
+(deftemplate RecipeOrdered
+    (slot name) 
+    (slot cuisine) 
+    (slot difficulty) 
+    (slot ingredients) 
+)
+
+(deftemplate SetMatch
+   (slot name)
+   (slot recipe1-name)
+   (slot recipe2-name)
+)
+
 ; Create Rules
 
 (defrule GetUserPreferences
@@ -28,20 +48,24 @@
     ; inputs for user
     (printout t "insert your name !")
     (bind ?name (read))
-    (printout t "Welcome, " ?name ". Let's find you a recipe!" crlf)
-    (printout t "What cuisine do you prefer? ")
-    (bind ?cuisine-pref (read))
-    (printout t "How difficult should the recipe be? (Easy, Intermediate, Difficult) ")
-    (bind ?difficulty-pref (read))
-    (printout t "Do you have any specific ingredient preferences? ")
-    (bind ?ingredient-pref (read))
-    ; create new user fact
-    (assert (User 
-        (name ?name)
-        (difficulty-preference ?difficulty-pref)
-        (cuisine-preference ?cuisine-pref)
-        (ingredient-preference ?ingredient-pref)
-    ))
+    (if (eq ?name exit)
+        then (exit) 
+    else
+        (printout t "Welcome, " ?name ". Let's find you a recipe!" crlf)
+        (printout t "What cuisine do you prefer? ")
+        (bind ?cuisine-pref (read))
+        (printout t "How difficult should the recipe be? (Easy, Intermediate, Difficult) ")
+        (bind ?difficulty-pref (read))
+        (printout t "Do you have any specific ingredient preferences? ")
+        (bind ?ingredient-pref (read))
+        ; create new user fact
+        (assert (User 
+            (name ?name)
+            (difficulty-preference ?difficulty-pref)
+            (cuisine-preference ?cuisine-pref)
+            (ingredient-preference ?ingredient-pref)
+            ))
+    )
 )
 
 (defrule RecommendRecipe
@@ -64,11 +88,24 @@
     (printout t "Based on your preferences, we recommend: " ?recipe crlf)
     (printout t "Ingredients: " ?ingredients crlf)
     (printout t "Enjoy your meal!" crlf)
-    ; (retract (User (name ?name)))
-    ; (retract (Recipe (name ?recipe)))
+    
+    (assert (RecipeRecommended))
+    (assert (RecipeCreated
+        (name ?recipe)
+        (cuisine ?cuisine)
+        (difficulty ?difficulty)
+        (ingredients ?ingredients)
+    ))
+    (assert (RecipeOrdered
+        (name ?recipe)
+        (cuisine ?cuisine)
+        (difficulty ?difficulty)
+        (ingredients ?ingredients)
+    ))
+    
 )
 
-(defrule checkRecipeCuisineAvailable ; check if the recipe is available based on cuisine
+(defrule RecommendOtherRecipe
     (User 
         (name ?name)
         (cuisine-preference ?cuisine-pref)
@@ -81,27 +118,102 @@
         (difficulty ?difficulty)
         (ingredients ?ingredients)
     )
-    (test (neq ?cuisine ?cuisine-pref))
+    (not (RecipeRecommended))
     =>
-    (printout t "Sorry we don't have the cuisine you prefer, try again hehe" crlf)
-    (retract (User (name ?name))) ; Delete user fact
-     ; Get back to input
-    (printout t "insert your name !")
-    (bind ?name (read))
-    (printout t "Welcome, " ?name ". Let's find you a recipe!" crlf)
-    (printout t "What cuisine do you prefer? ")
-    (bind ?cuisine-pref (read))
-    (printout t "How difficult should the recipe be? (Easy, Intermediate, Difficult) ")
-    (bind ?difficulty-pref (read))
-    (printout t "Do you have any specific ingredient preferences? ")
-    (bind ?ingredient-pref (read))
-    ; create new user fact
-    (assert (User 
-        (name ?name)
-        (difficulty-preference ?difficulty-pref)
-        (cuisine-preference ?cuisine-pref)
-        (ingredient-preference ?ingredient-pref)
-    ))
+    (printout t "There are other recipe that you might like!" crlf)
+    (if (eq ?cuisine ?cuisine-pref)
+        then 
+        (printout t "Based on your cuisine preference, we recommend: " ?recipe crlf)
+        (printout t "Ingredients: " ?ingredients crlf)
+        (printout t "Enjoy your meal!" crlf)
+        (assert (RecipeCreated
+            (name ?recipe)
+            (cuisine ?cuisine)
+            (difficulty ?difficulty)
+            (ingredients ?ingredients)
+        ))
+        (assert (RecipeOrdered
+            (name ?recipe)
+            (cuisine ?cuisine)
+            (difficulty ?difficulty)
+            (ingredients ?ingredients)
+        ))
+        (assert (RecipeRecommended))
+        
+    else
+        (if (eq ?difficulty ?difficulty-pref)
+            then
+            (printout t "Based on your difficulty preference, we recommend: " ?recipe crlf)
+            (printout t "Ingredients: " ?ingredients crlf)
+            (printout t "Enjoy your meal!" crlf)
+            (assert (RecipeCreated
+                (name ?recipe)
+                (cuisine ?cuisine)
+                (difficulty ?difficulty)
+                (ingredients ?ingredients)
+            ))
+            (assert (RecipeOrdered
+                (name ?recipe)
+                (cuisine ?cuisine)
+                (difficulty ?difficulty)
+                (ingredients ?ingredients)
+            ))
+            (assert (RecipeRecommended))
+            
+        else 
+            (if (str-compare ?ingredients ?ingredient-pref)
+                then
+                (printout t "Based on your ingredient preference, we recommend: " ?recipe crlf)
+                (printout t "Ingredients: " ?ingredients crlf)
+                (printout t "Enjoy your meal!" crlf)
+                (assert (RecipeCreated
+                    (name ?recipe)
+                    (cuisine ?cuisine)
+                    (difficulty ?difficulty)
+                    (ingredients ?ingredients)
+                ))
+                (assert (RecipeOrdered
+                    (name ?recipe)
+                    (cuisine ?cuisine)
+                    (difficulty ?difficulty)
+                    (ingredients ?ingredients)
+                ))
+                (assert (RecipeRecommended))
+                
+            else 
+            )
+        )
+    )
+)
+
+(defrule SaySorry
+    (not (RecipeRecommended))
+    =>
+    (printout t "Sorry, we couldn't find a recipe that exactly matches your preferences." crlf)
+)
+
+(defrule SetMatchCheck
+   (RecipeCreated
+        (name ?recipe1)
+        (cuisine ?cuisine1)
+        (difficulty ?difficulty1)
+        (ingredients ?ingredients1)
+    )
+   (RecipeCreated
+        (name ?recipe2)
+        (cuisine ?cuisine2)
+        (difficulty ?difficulty2)
+        (ingredients ?ingredients2)
+    )
+   (SetMatch
+         (name ?name_set)
+         (recipe1-name ?recipe_match1)
+         (recipe2-name ?recipe_match2)
+    )
+ (test (or (and (eq ?recipe1 ?recipe_match1)(eq ?recipe2 ?recipe_match2)) 
+ (and (eq ?recipe2 ?recipe_match1)(eq ?recipe1 ?recipe_match2))))
+   =>
+    (printout t "BEST MATCH!!! , You Got " ?name_set crlf)
 )
 
 (defrule GetUserRating
@@ -111,16 +223,15 @@
         (difficulty-preference ?difficulty-pref)
         (ingredient-preference ?ingredient-pref)
     )
-    (Recipe 
+    ?recipeOrdered <-   (RecipeOrdered 
         (name ?recipe)
         (cuisine ?cuisine)
         (difficulty ?difficulty)
         (ingredients ?ingredients)
     )
-    (test (eq ?cuisine ?cuisine-pref))
-    (test (eq ?difficulty ?difficulty-pref))
-    (test (str-compare ?ingredients ?ingredient-pref))
+    (RecipeRecommended)
     =>
+    
     (printout t "Have you tried the recommended recipe " ?recipe "? (Enter 'yes' or 'no') ")
     (bind ?user-response (read))
     (if (eq ?user-response yes)
@@ -129,27 +240,31 @@
         (bind ?rating (read))
         (assert (RecipeRating (recipe-name ?recipe) (user-name ?user-name) (rating ?rating)))
         (printout t "Thank you for your rating!" crlf)
+        
     else
         (printout t "No problem. If you try it later, feel free to come back and rate it!" crlf)
     )
+    (retract ?recipeOrdered)
+        
+    
 )
 
 
-
 (defrule ExitRecommendationWithRating
-   (User (name ?name))
-   (RecipeRating (user-name ?name))
+   ?user <- (User (name ?name))
+   ?recom <- (RecipeRecommended)
    =>
    (printout t "Thank you for using the personalized recipe recommender, " ?name "!" crlf)
    (printout t "Don't forget to check out more recipes and share your feedback. Enjoy your meals!" crlf)
-;    (retract (User (name ?name)))
-   (exit)
+   (retract ?recom)
+   (retract ?user)
+   ;(exit)
 )
 
 ; set initial facts
 
 (deffacts SampleRecipes
-   (Recipe 
+    (Recipe 
           (name "Spaghetti Carbonara") 
           (cuisine Italian) 
           (difficulty Easy)
@@ -234,7 +349,7 @@
           (cuisine Indian) 
           (difficulty Moderate)
           (ingredients "chicken, curry powder, coconut milk, onion, garlic, ginger") 
-          (instructions "1. Sauté onions, garlic, and ginger. 2. Add chicken and curry powder. 3. Pour coconut milk. 4. Simmer until cooked.")    )
+          (instructions "1. Sauté onions, garlic, and ginger. 2. Add chicken and curry powder. 3. Pour coconut milk. 4. Simmer until cooked.")  
    )
 
    (Recipe 
@@ -268,4 +383,9 @@
           (ingredients "beef sirloin, broccoli, soy sauce, garlic, ginger") 
           (instructions "1. Slice beef and stir-fry with garlic and ginger. 2. Add broccoli. 3. Pour soy sauce. 4. Cook until beef is done.")
    )
+    (SetMatch
+        (name "PerfectBody")
+        (recipe1-name "Caesar Salad")
+        (recipe2-name "Spaghetti Carbonara")
+    )
 )
